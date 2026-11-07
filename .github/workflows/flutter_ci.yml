@@ -1,0 +1,56 @@
+name: PlanIt CI/CD Pipeline
+
+on:
+  # Trigger workflow on pushes to main, dev, and qa branches
+  push:
+    branches: [ main, dev, qa ]
+  # Trigger workflow on pull requests targeting main, dev, and qa branches
+  pull_request:
+    branches: [ main, dev, qa ]
+
+jobs:
+  build-and-test:
+    name: Code Quality, Unit Tests & APK Build
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out repository source code
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Java JDK 17 required for Android builds
+      - name: Set up Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # Step 3: Set up Flutter SDK environment with caching
+      - name: Set up Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      # Step 4: Resolve and download all project dependencies
+      - name: Install Project Dependencies
+        run: flutter pub get
+
+      # Step 5: Run static analysis to verify code quality and linter rules
+      - name: Analyze Project Code
+        run: flutter analyze
+
+      # Step 6: Execute all unit tests to ensure business logic integrity
+      - name: Run Unit Tests
+        run: flutter test
+
+      # Step 7: Build Android release APK
+      - name: Build Android Release APK
+        run: flutter build apk --release
+
+      # Step 8: Upload the compiled APK as a downloadable GitHub artifact
+      - name: Upload Release APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PlanIt-Release-APK
+          path: build/app/outputs/flutter-apk/app-release.apk
