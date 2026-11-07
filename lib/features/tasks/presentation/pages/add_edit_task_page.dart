@@ -31,7 +31,6 @@ class _AddEditTaskPageState extends State<AddEditTaskPage> {
         TextEditingController(text: widget.task?.description ?? '');
     _priority = widget.task?.priority ?? 'Medium';
 
-    // Parse reminder date time from existing entity
     final reminder = widget.task?.reminderDateTime;
     if (reminder != null && reminder.trim().isNotEmpty) {
       final trimmed = reminder.trim();
@@ -54,7 +53,6 @@ class _AddEditTaskPageState extends State<AddEditTaskPage> {
     super.dispose();
   }
 
-  // Pick date and time sequentially and update state
   Future<void> _pickReminderDateTime() async {
     final DateTime now = DateTime.now();
     final DateTime? pickedDate = await showDatePicker(
@@ -94,11 +92,8 @@ class _AddEditTaskPageState extends State<AddEditTaskPage> {
   void _saveTask() {
     if (!_formKey.currentState!.validate()) return;
 
-    // Convert to ISO 8601 string representation
     final String? reminderString =
         _selectedReminderDateTime?.toIso8601String();
-
-    debugPrint('Saving Task: Title = ${_titleController.text}, Reminder = $reminderString');
 
     final nowString = DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now());
     final isEditing = widget.task != null;
@@ -123,10 +118,8 @@ class _AddEditTaskPageState extends State<AddEditTaskPage> {
       context.read<TaskBloc>().add(AddTaskEvent(task));
     }
 
-    // Cancel existing reminder if any
     NotificationService.instance.cancelReminder(taskId);
 
-    // Schedule notification if reminder time is in future
     if (_selectedReminderDateTime != null &&
         _selectedReminderDateTime!.isAfter(DateTime.now()) &&
         task.isCompleted == 0) {
@@ -144,12 +137,11 @@ class _AddEditTaskPageState extends State<AddEditTaskPage> {
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.task != null;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.deepPurple,
-        iconTheme: const IconThemeData(color: Colors.white),
-        title: Text(isEditing ? 'Edit Task' : 'Add New Task',style: TextStyle(color: Colors.white),),
+        title: Text(isEditing ? 'Edit Task' : 'Add New Task'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -212,13 +204,18 @@ class _AddEditTaskPageState extends State<AddEditTaskPage> {
               // Reminder Selector Card
               Card(
                 elevation: 0,
-                color: Colors.grey.shade100,
+                color: isDark ? const Color(0xFF1E1E1E) : Colors.grey.shade100,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(color: Colors.grey.shade300),
+                  side: BorderSide(
+                    color: isDark ? Colors.white12 : Colors.grey.shade300,
+                  ),
                 ),
                 child: ListTile(
-                  leading: const Icon(Icons.alarm, color: Colors.deepPurple),
+                  leading: Icon(
+                    Icons.alarm,
+                    color: isDark ? Colors.deepPurpleAccent.shade100 : Colors.deepPurple,
+                  ),
                   title: Text(
                     _selectedReminderDateTime == null
                         ? 'Set Reminder (Optional)'
@@ -229,14 +226,17 @@ class _AddEditTaskPageState extends State<AddEditTaskPage> {
                           ? FontWeight.normal
                           : FontWeight.bold,
                       color: _selectedReminderDateTime == null
-                          ? Colors.grey.shade700
-                          : Colors.deepPurple,
+                          ? (isDark ? Colors.white60 : Colors.grey.shade700)
+                          : (isDark ? Colors.deepPurpleAccent.shade100 : Colors.deepPurple),
                     ),
                   ),
                   subtitle: _selectedReminderDateTime != null
-                      ? const Text(
+                      ? Text(
                           'Tap to change time',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark ? Colors.white38 : Colors.grey,
+                          ),
                         )
                       : null,
                   trailing: _selectedReminderDateTime != null
@@ -301,7 +301,7 @@ class _AddEditTaskPageState extends State<AddEditTaskPage> {
 //   String _priority = 'Medium';
 //   DateTime? _selectedReminderDateTime;
 
-// @override
+//   @override
 //   void initState() {
 //     super.initState();
 //     _titleController = TextEditingController(text: widget.task?.title ?? '');
@@ -309,32 +309,21 @@ class _AddEditTaskPageState extends State<AddEditTaskPage> {
 //         TextEditingController(text: widget.task?.description ?? '');
 //     _priority = widget.task?.priority ?? 'Medium';
 
-//     // Parse reminder time safely supporting both ISO string and custom formats
+//     // Parse reminder date time from existing entity
 //     final reminder = widget.task?.reminderDateTime;
 //     if (reminder != null && reminder.trim().isNotEmpty) {
 //       final trimmed = reminder.trim();
-      
-//       // 1. Try standard ISO parse
 //       _selectedReminderDateTime = DateTime.tryParse(trimmed);
-
-//       // 2. Fallback to common date formats if ISO parse returns null
 //       if (_selectedReminderDateTime == null) {
-//         final formats = [
-//           DateFormat('yyyy-MM-dd HH:mm'),
-//           DateFormat('dd MMM yyyy, hh:mm a'),
-//           DateFormat('yyyy-MM-ddTHH:mm:ss'),
-//         ];
-
-//         for (final format in formats) {
-//           try {
-//             _selectedReminderDateTime = format.parse(trimmed);
-//             break;
-//           } catch (_) {}
+//         try {
+//           _selectedReminderDateTime =
+//               DateFormat('yyyy-MM-dd HH:mm').parse(trimmed);
+//         } catch (_) {
+//           _selectedReminderDateTime = null;
 //         }
 //       }
 //     }
 //   }
- 
 
 //   @override
 //   void dispose() {
@@ -343,7 +332,7 @@ class _AddEditTaskPageState extends State<AddEditTaskPage> {
 //     super.dispose();
 //   }
 
-//   // Date and Time picker
+//   // Pick date and time sequentially and update state
 //   Future<void> _pickReminderDateTime() async {
 //     final DateTime now = DateTime.now();
 //     final DateTime? pickedDate = await showDatePicker(
@@ -365,23 +354,29 @@ class _AddEditTaskPageState extends State<AddEditTaskPage> {
 
 //     if (pickedTime == null) return;
 
+//     final combinedDateTime = DateTime(
+//       pickedDate.year,
+//       pickedDate.month,
+//       pickedDate.day,
+//       pickedTime.hour,
+//       pickedTime.minute,
+//     );
+
 //     setState(() {
-//       _selectedReminderDateTime = DateTime(
-//         pickedDate.year,
-//         pickedDate.month,
-//         pickedDate.day,
-//         pickedTime.hour,
-//         pickedTime.minute,
-//       );
+//       _selectedReminderDateTime = combinedDateTime;
 //     });
+
+//     debugPrint('Selected Reminder Time: $_selectedReminderDateTime');
 //   }
 
-// void _saveTask() {
+//   void _saveTask() {
 //     if (!_formKey.currentState!.validate()) return;
 
-//     // Save as standard ISO-8601 string
+//     // Convert to ISO 8601 string representation
 //     final String? reminderString =
 //         _selectedReminderDateTime?.toIso8601String();
+
+//     debugPrint('Saving Task: Title = ${_titleController.text}, Reminder = $reminderString');
 
 //     final nowString = DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now());
 //     final isEditing = widget.task != null;
@@ -406,8 +401,10 @@ class _AddEditTaskPageState extends State<AddEditTaskPage> {
 //       context.read<TaskBloc>().add(AddTaskEvent(task));
 //     }
 
+//     // Cancel existing reminder if any
 //     NotificationService.instance.cancelReminder(taskId);
 
+//     // Schedule notification if reminder time is in future
 //     if (_selectedReminderDateTime != null &&
 //         _selectedReminderDateTime!.isAfter(DateTime.now()) &&
 //         task.isCompleted == 0) {
@@ -421,53 +418,6 @@ class _AddEditTaskPageState extends State<AddEditTaskPage> {
 
 //     Navigator.pop(context);
 //   }
-//   // void _saveTask() {
-//   //   if (!_formKey.currentState!.validate()) return;
-
-//   //   // Save as clean ISO8601 string
-//   //   final String? reminderString =
-//   //       _selectedReminderDateTime?.toIso8601String();
-
-//   //   final nowString = DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now());
-//   //   final isEditing = widget.task != null;
-
-//   //   final int taskId = isEditing
-//   //       ? widget.task!.id!
-//   //       : (DateTime.now().millisecondsSinceEpoch % 1000000);
-
-//   //   final task = TaskEntity(
-//   //     id: taskId,
-//   //     title: _titleController.text.trim(),
-//   //     description: _descriptionController.text.trim(),
-//   //     createdAt: widget.task?.createdAt ?? nowString,
-//   //     isCompleted: widget.task?.isCompleted ?? 0,
-//   //     priority: _priority,
-//   //     reminderDateTime: reminderString,
-//   //   );
-
-//   //   if (isEditing) {
-//   //     context.read<TaskBloc>().add(UpdateTaskEvent(task));
-//   //   } else {
-//   //     context.read<TaskBloc>().add(AddTaskEvent(task));
-//   //   }
-
-//   //   // Cancel old notification
-//   //   NotificationService.instance.cancelReminder(taskId);
-
-//   //   // Schedule notification if reminder time is in future
-//   //   if (_selectedReminderDateTime != null &&
-//   //       _selectedReminderDateTime!.isAfter(DateTime.now()) &&
-//   //       task.isCompleted == 0) {
-//   //     NotificationService.instance.scheduleTaskReminder(
-//   //       id: taskId,
-//   //       title: task.title,
-//   //       body: task.description,
-//   //       scheduledDate: _selectedReminderDateTime!,
-//   //     );
-//   //   }
-
-//   //   Navigator.pop(context);
-//   // }
 
 //   @override
 //   Widget build(BuildContext context) {
@@ -475,7 +425,9 @@ class _AddEditTaskPageState extends State<AddEditTaskPage> {
 
 //     return Scaffold(
 //       appBar: AppBar(
-//         title: Text(isEditing ? 'Edit Task' : 'Add New Task'),
+//         backgroundColor: Colors.deepPurple,
+//         iconTheme: const IconThemeData(color: Colors.white),
+//         title: Text(isEditing ? 'Edit Task' : 'Add New Task',style: TextStyle(color: Colors.white),),
 //       ),
 //       body: SingleChildScrollView(
 //         padding: const EdgeInsets.all(16.0),
@@ -512,7 +464,7 @@ class _AddEditTaskPageState extends State<AddEditTaskPage> {
 //               ),
 //               const SizedBox(height: 16),
 //               DropdownButtonFormField<String>(
-//                 value: _priority,
+//                 initialValue: _priority,
 //                 decoration: InputDecoration(
 //                   labelText: 'Priority',
 //                   border: OutlineInputBorder(
@@ -535,7 +487,7 @@ class _AddEditTaskPageState extends State<AddEditTaskPage> {
 //               ),
 //               const SizedBox(height: 20),
 
-//               // Reminder Selection Tile
+//               // Reminder Selector Card
 //               Card(
 //                 elevation: 0,
 //                 color: Colors.grey.shade100,
@@ -583,6 +535,8 @@ class _AddEditTaskPageState extends State<AddEditTaskPage> {
 //               ElevatedButton(
 //                 onPressed: _saveTask,
 //                 style: ElevatedButton.styleFrom(
+//                   backgroundColor: Colors.deepPurple,
+//                   foregroundColor: Colors.white,
 //                   padding: const EdgeInsets.symmetric(vertical: 14),
 //                   shape: RoundedRectangleBorder(
 //                     borderRadius: BorderRadius.circular(12),
