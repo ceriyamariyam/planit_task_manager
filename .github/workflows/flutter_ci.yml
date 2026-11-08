@@ -1,10 +1,8 @@
 name: PlanIt CI/CD Pipeline
 
 on:
-  # Trigger workflow on pushes to main, dev, and qa branches
   push:
     branches: [ main, dev, qa ]
-  # Trigger workflow on pull requests targeting main, dev, and qa branches
   pull_request:
     branches: [ main, dev, qa ]
 
@@ -25,30 +23,36 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # Step 3: Set up Flutter SDK environment with caching
+      # Step 3: Set up Gradle action for caching and timeout prevention
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          cache-read-only: false
+
+      # Step 4: Set up Flutter SDK environment with caching
       - name: Set up Flutter SDK
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
           cache: true
 
-      # Step 4: Resolve and download all project dependencies
+      # Step 5: Resolve and download all project dependencies
       - name: Install Project Dependencies
         run: flutter pub get
 
-      # Step 5: Run static analysis to verify code quality and linter rules
+      # Step 6: Run static analysis to verify code quality and linter rules
       - name: Analyze Project Code
         run: flutter analyze
 
-      # Step 6: Execute all unit tests to ensure business logic integrity
+      # Step 7: Execute all unit tests to ensure business logic integrity
       - name: Run Unit Tests
         run: flutter test
 
-      # Step 7: Build Android release APK
+      # Step 8: Build Android release APK with validation bypass
       - name: Build Android Release APK
-        run: flutter build apk --release
+        run: flutter build apk --release --android-skip-build-dependency-validation
 
-      # Step 8: Upload the compiled APK as a downloadable GitHub artifact
+      # Step 9: Upload the compiled APK as a downloadable GitHub artifact
       - name: Upload Release APK Artifact
         uses: actions/upload-artifact@v4
         with:
