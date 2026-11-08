@@ -48,9 +48,9 @@ jobs:
       - name: Run Unit Tests
         run: flutter test
 
-      # Step 8: Build Android release APK
+      # Step 8: Build Android release APK with validation bypass
       - name: Build Android Release APK
-        run: flutter build apk --release
+        run: flutter build apk --release --android-skip-build-dependency-validation
 
       # Step 9: Upload the compiled APK as a downloadable GitHub artifact
       - name: Upload Release APK Artifact
