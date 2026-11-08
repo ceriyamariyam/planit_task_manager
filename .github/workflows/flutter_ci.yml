@@ -1,10 +1,8 @@
 name: PlanIt CI/CD Pipeline
 
 on:
-  # Trigger workflow on pushes to main, dev, and qa branches
   push:
     branches: [ main, dev, qa ]
-  # Trigger workflow on pull requests targeting main, dev, and qa branches
   pull_request:
     branches: [ main, dev, qa ]
 
@@ -14,45 +12,40 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Check out repository source code
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Step 2: Set up Java JDK 17 required for Android builds
       - name: Set up Java JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # Step 3: Set up Gradle with caching to prevent download timeouts (HTTP 504)
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-
-      # Step 4: Set up Flutter SDK environment with caching
       - name: Set up Flutter SDK
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
           cache: true
 
-      # Step 5: Resolve and download all project dependencies
       - name: Install Project Dependencies
         run: flutter pub get
 
-      # Step 6: Run static analysis to verify code quality and linter rules
       - name: Analyze Project Code
         run: flutter analyze
 
-      # Step 7: Execute all unit tests to ensure business logic integrity
       - name: Run Unit Tests
         run: flutter test
 
-      # Step 8: Build Android release APK
+      # Gradle ഡൗൺലോഡ് ഉറപ്പാക്കാനും ടൈംഔട്ട് ഒഴിവാക്കാനുമുള്ള സ്റ്റെപ്പ്
+      - name: Pre-download Gradle Wrapper with Retry
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          for i in 1 2 3; do ./gradlew --version && break || sleep 10; done
+
       - name: Build Android Release APK
         run: flutter build apk --release
 
-      # Step 9: Upload the compiled APK as a downloadable GitHub artifact
       - name: Upload Release APK Artifact
         uses: actions/upload-artifact@v4
         with:
